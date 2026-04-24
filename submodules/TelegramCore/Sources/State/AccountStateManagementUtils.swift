@@ -4444,8 +4444,8 @@ func replayFinalState(
                     if !resourceIds.isEmpty {
                         let _ = mediaBox.removeCachedResources(Array(Set(resourceIds)), force: true).start()
                     }
-                    deletedMessageIds.append(contentsOf: ids.map { .global($0) })
                 }
+                deletedMessageIds.append(contentsOf: ids.map { .global($0) })
             case let .DeleteMessages(ids):
                 if SGSimpleSettings.shared.messageLoggerEnabled {
                     for messageId in ids {
@@ -4455,8 +4455,8 @@ func replayFinalState(
                     _internal_deleteMessages(transaction: transaction, mediaBox: mediaBox, ids: ids, manualAddMessageThreadStatsDifference: { id, add, remove in
                         addMessageThreadStatsDifference(threadKey: id, remove: remove, addedMessagePeer: nil, addedMessageId: nil, isOutgoing: false)
                     })
-                    deletedMessageIds.append(contentsOf: ids.map { .messageId($0) })
                 }
+                deletedMessageIds.append(contentsOf: ids.map { .messageId($0) })
             case let .UpdateMinAvailableMessage(id):
                 if let message = transaction.getMessage(id) {
                     updatePeerChatInclusionWithMinTimestamp(transaction: transaction, id: id.peerId, minTimestamp: message.timestamp, forceRootGroupIfNotExists: false)

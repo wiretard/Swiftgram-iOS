@@ -96,6 +96,9 @@
 "Settings.HidePhoneInSettingsUI" = "Hide Phone in Settings";
 "Settings.HidePhoneInSettingsUI.Notice" = "This will only hide your phone number from the settings interface. To hide it from others, go to Privacy and Security.";
 
+"Settings.MessageLogger" = "Message Logger";
+"Settings.MessageLogger.Notice" = "Logs deleted and edited messages to the Swiftgram log file.";
+
 "PasscodeSettings.AutoLock.InFiveSeconds" = "If away for 5 seconds";
 
 "ProxySettings.UseSystemDNS" = "Use system DNS";

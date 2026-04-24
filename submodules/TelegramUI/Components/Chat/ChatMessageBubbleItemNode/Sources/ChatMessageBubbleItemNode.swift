@@ -3839,6 +3839,9 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         strongSelf.updateAccessibilityData(accessibilityData)
         strongSelf.disablesComments = disablesComments
         
+        let isSGDeleted = item.message.attributes.contains(where: { $0 is SGDeletedMessageAttribute })
+        strongSelf.mainContainerNode.alpha = isSGDeleted ? 0.5 : 1.0
+        
         strongSelf.authorNameColor = authorNameColor
         strongSelf.authorRank = authorRank
         

@@ -1663,10 +1663,14 @@ extension ChatControllerImpl {
                 if canSendMessagesHere {
                     let _ = strongSelf.presentVoiceMessageDiscardAlert(action: {
                         if let message = strongSelf.chatDisplayNode.historyNode.messageInCurrentHistoryView(messageId) {
+                            var replyQuote: EngineMessageReplyQuote?
+                            if message.attributes.contains(where: { $0 is SGDeletedMessageAttribute }) && !message.text.isEmpty {
+                                replyQuote = EngineMessageReplyQuote(text: message.text, offset: nil, entities: message.textEntitiesAttribute?.entities ?? [], media: nil)
+                            }
                             strongSelf.updateChatPresentationInterfaceState(animated: true, interactive: true, { $0.updatedInterfaceState({
                                 $0.withUpdatedReplyMessageSubject(ChatInterfaceState.ReplyMessageSubject(
                                     messageId: message.id,
-                                    quote: nil,
+                                    quote: replyQuote,
                                     innerSubject: innerSubject
                                 ))
                             }).updatedReplyMessage(message).updatedSearch(nil).updatedShowCommands(false) }, completion: { t in

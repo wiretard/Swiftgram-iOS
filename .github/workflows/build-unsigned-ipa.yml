@@ -81,11 +81,11 @@ jobs:
       - name: Upload Unsigned IPA
         uses: actions/upload-artifact@v4
         with:
-          name: Swiftgram-Unsigned-${{ env.APP_VERSION }}-${{ env.BUILD_NUMBER }}
+          name: MoreGram-Unsigned-${{ env.APP_VERSION }}-${{ env.BUILD_NUMBER }}
           path: /Users/Shared/telegram-ios/build/artifacts/Telegram.ipa
 
       - name: Upload dSYMs
         uses: actions/upload-artifact@v4
         with:
-          name: Swiftgram-dSYMs-${{ env.APP_VERSION }}-${{ env.BUILD_NUMBER }}
+          name: MoreGram-dSYMs-${{ env.APP_VERSION }}-${{ env.BUILD_NUMBER }}
           path: /Users/Shared/telegram-ios/build/artifacts/Telegram.DSYMs.zip

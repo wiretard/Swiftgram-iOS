@@ -4,6 +4,27 @@ import SwiftSignalKit
 import TelegramApi
 import MtProtoKit
 import EncryptionProvider
+import SGSimpleSettings
+import SGLogging
+
+private func sgMarkMessageAsDeleted(transaction: Transaction, messageId: MessageId) {
+    guard let message = transaction.getMessage(messageId) else { return }
+    let peerName = message.peers[message.id.peerId]?.debugDisplayTitle
+    let authorName = message.author?.debugDisplayTitle
+    let mediaTypes = message.media.map { String(describing: type(of: $0)) }
+    SGLogger.shared.log("MsgLog", "[DELETED] msgId=\(message.id) peer=\(message.id.peerId) peerName=\(peerName ?? "nil") author=\(message.author?.id.toInt64() ?? 0) authorName=\(authorName ?? "nil") ts=\(message.timestamp) text=\(message.text) media=\(mediaTypes.joined(separator: ", "))")
+    var storeForwardInfo: StoreMessageForwardInfo?
+    if let forwardInfo = message.forwardInfo {
+        storeForwardInfo = StoreMessageForwardInfo(forwardInfo)
+    }
+    var attributes = message.attributes
+    if !attributes.contains(where: { $0 is SGDeletedMessageAttribute }) {
+        attributes.append(SGDeletedMessageAttribute(date: Int32(Date().timeIntervalSince1970)))
+    }
+    transaction.updateMessage(message.id, update: { _ in
+        return .update(StoreMessage(id: message.id, customStableId: nil, globallyUniqueId: message.globallyUniqueId, groupingKey: message.groupingKey, threadId: message.threadId, timestamp: message.timestamp, flags: StoreMessageFlags(message.flags), tags: message.tags, globalTags: message.globalTags, localTags: message.localTags, forwardInfo: storeForwardInfo, authorId: message.author?.id, text: message.text, attributes: attributes, media: message.media))
+    })
+}
 
 private func reactionGeneratedEvent(_ previousReactions: ReactionsMessageAttribute?, _ updatedReactions: ReactionsMessageAttribute?, message: Message, transaction: Transaction) -> (reactionAuthor: Peer, reaction: MessageReaction.Reaction, message: Message, timestamp: Int32)? {
     if let updatedReactions = updatedReactions, !message.flags.contains(.Incoming), message.id.peerId.namespace == Namespaces.Peer.CloudUser {
@@ -4410,18 +4431,31 @@ func replayFinalState(
                     }
                 }
             case let .DeleteMessagesWithGlobalIds(ids):
-                var resourceIds: [MediaResourceId] = []
-                transaction.deleteMessagesWithGlobalIds(ids, forEachMedia: { media in
-                    addMessageMediaResourceIdsToRemove(media: media, resourceIds: &resourceIds)
-                })
-                if !resourceIds.isEmpty {
-                    let _ = mediaBox.removeCachedResources(Array(Set(resourceIds)), force: true).start()
+                if SGSimpleSettings.shared.messageLoggerEnabled {
+                    let resolvedIds = transaction.messageIdsForGlobalIds(ids)
+                    for messageId in resolvedIds {
+                        sgMarkMessageAsDeleted(transaction: transaction, messageId: messageId)
+                    }
+                } else {
+                    var resourceIds: [MediaResourceId] = []
+                    transaction.deleteMessagesWithGlobalIds(ids, forEachMedia: { media in
+                        addMessageMediaResourceIdsToRemove(media: media, resourceIds: &resourceIds)
+                    })
+                    if !resourceIds.isEmpty {
+                        let _ = mediaBox.removeCachedResources(Array(Set(resourceIds)), force: true).start()
+                    }
                 }
                 deletedMessageIds.append(contentsOf: ids.map { .global($0) })
             case let .DeleteMessages(ids):
-                _internal_deleteMessages(transaction: transaction, mediaBox: mediaBox, ids: ids, manualAddMessageThreadStatsDifference: { id, add, remove in
-                    addMessageThreadStatsDifference(threadKey: id, remove: remove, addedMessagePeer: nil, addedMessageId: nil, isOutgoing: false)
-                })
+                if SGSimpleSettings.shared.messageLoggerEnabled {
+                    for messageId in ids {
+                        sgMarkMessageAsDeleted(transaction: transaction, messageId: messageId)
+                    }
+                } else {
+                    _internal_deleteMessages(transaction: transaction, mediaBox: mediaBox, ids: ids, manualAddMessageThreadStatsDifference: { id, add, remove in
+                        addMessageThreadStatsDifference(threadKey: id, remove: remove, addedMessagePeer: nil, addedMessageId: nil, isOutgoing: false)
+                    })
+                }
                 deletedMessageIds.append(contentsOf: ids.map { .messageId($0) })
             case let .UpdateMinAvailableMessage(id):
                 if let message = transaction.getMessage(id) {
@@ -4452,6 +4486,15 @@ func replayFinalState(
                     invalidateGroupStats.insert(Namespaces.PeerGroup.archive)
                 }
             case let .EditMessage(id, message):
+                if SGSimpleSettings.shared.messageLoggerEnabled {
+                    if let previousMessage = transaction.getMessage(id) {
+                        if previousMessage.text != message.text {
+                            let peerName = previousMessage.peers[previousMessage.id.peerId]?.debugDisplayTitle
+                            let authorName = previousMessage.author?.debugDisplayTitle
+                            SGLogger.shared.log("MsgLog", "[EDITED] msgId=\(id) peer=\(id.peerId) peerName=\(peerName ?? "nil") author=\(previousMessage.author?.id.toInt64() ?? 0) authorName=\(authorName ?? "nil") ts=\(previousMessage.timestamp) oldText=\(previousMessage.text) newText=\(message.text)")
+                        }
+                    }
+                }
                 var generatedEvent: (reactionAuthor: Peer, reaction: MessageReaction.Reaction, message: Message, timestamp: Int32)?
                 transaction.updateMessage(id, update: { previousMessage in
                     var updatedFlags = message.flags

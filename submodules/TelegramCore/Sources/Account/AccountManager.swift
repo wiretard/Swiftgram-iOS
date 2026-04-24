@@ -244,6 +244,7 @@ private var declaredEncodables: Void = {
     declareEncodable(TelegramMediaLiveStream.self, f: { TelegramMediaLiveStream(decoder: $0) })
     declareEncodable(ScheduledRepeatAttribute.self, f: { ScheduledRepeatAttribute(decoder: $0) })
     declareEncodable(SummarizationMessageAttribute.self, f: { SummarizationMessageAttribute(decoder: $0) })
+    declareEncodable(SGDeletedMessageAttribute.self, f: { SGDeletedMessageAttribute(decoder: $0) })
     return
 }()
 

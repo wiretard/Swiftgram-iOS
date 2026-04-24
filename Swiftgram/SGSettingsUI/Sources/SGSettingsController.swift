@@ -106,6 +106,7 @@ private enum SGBoolSetting: String {
     case nyStyleSnow
     case nyStyleLightning
     case tabBarSearchEnabled
+    case messageLoggerEnabled
 }
 
 private enum SGOneFromManySetting: String {
@@ -328,6 +329,8 @@ private func SGControllerEntries(presentationData: PresentationData, callListSet
     entries.append(.notice(id: id.count, section: .other, text: i18n("Settings.DefaultEmojisFirst.Notice", lang)))
     entries.append(.toggle(id: id.count, section: .other, settingName: .hidePhoneInSettings, value: SGSimpleSettings.shared.hidePhoneInSettings, text: i18n("Settings.HidePhoneInSettingsUI", lang), enabled: true))
     entries.append(.notice(id: id.count, section: .other, text: i18n("Settings.HidePhoneInSettingsUI.Notice", lang)))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .messageLoggerEnabled, value: SGSimpleSettings.shared.messageLoggerEnabled, text: i18n("Settings.MessageLogger", lang), enabled: true))
+    entries.append(.notice(id: id.count, section: .other, text: i18n("Settings.MessageLogger.Notice", lang)))
     
     return filterSGItemListUIEntrires(entries: entries, by: state.searchQuery)
 }
@@ -521,6 +524,8 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
         case .nyStyleLightning:
             SGSimpleSettings.shared.nyStyle = value ? SGSimpleSettings.NYStyle.lightning.rawValue : SGSimpleSettings.NYStyle.default.rawValue
             simplePromise.set(true) // Trigger update for 'enabled' field of other toggles
+        case .messageLoggerEnabled:
+            SGSimpleSettings.shared.messageLoggerEnabled = value
         }
     }, updateSliderValue: { setting, value in
         switch (setting) {
@@ -720,7 +725,7 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
         
         let entries = SGControllerEntries(presentationData: presentationData, callListSettings: callListSettings, experimentalUISettings: experimentalUISettings, appConfiguration: appConfiguration, nameColors: PeerNameColors.with(availableReplyColors: availableReplyColors, availableProfileColors: availableProfileColors), state: state)
         
-        let controllerState = ItemListControllerState(presentationData: ItemListPresentationData(presentationData), title: .text("Swiftgram"), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
+        let controllerState = ItemListControllerState(presentationData: ItemListPresentationData(presentationData), title: .text("MoreGram"), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
         
         // TODO(swiftgram): focusOnItemTag support
         /* var index = 0

@@ -20,7 +20,16 @@ jobs:
       - name: Set active Xcode path
         run: |
           XCODE_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["xcode"]);')
-          sudo xcode-select -s /Applications/Xcode_$XCODE_VERSION.app/Contents/Developer
+          XCODE_PATH="/Applications/Xcode_${XCODE_VERSION}.app"
+          if [ ! -d "$XCODE_PATH" ]; then
+            echo "Exact Xcode $XCODE_VERSION not found, finding closest match..."
+            XCODE_PATH=$(ls -d /Applications/Xcode_${XCODE_VERSION}*.app 2>/dev/null | head -1)
+            if [ -z "$XCODE_PATH" ]; then
+              echo "No matching Xcode found, using default"
+              XCODE_PATH=$(xcode-select -p | sed 's|/Contents/Developer||')
+            fi
+          fi
+          sudo xcode-select -s "${XCODE_PATH}/Contents/Developer"
 
       - name: Create canonical source directory
         run: |
@@ -53,7 +62,8 @@ jobs:
             --configurationPath="build-system/appstore-configuration.json" \
             --codesigningInformationPath=build-system/fake-codesigning \
             --configuration=release_arm64 \
-            --buildNumber="$BUILD_NUMBER"
+            --buildNumber="$BUILD_NUMBER" \
+            --overrideXcodeVersion
 
           OUTPUT_PATH="build/artifacts"
           rm -rf "$OUTPUT_PATH"

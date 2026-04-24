@@ -57,13 +57,13 @@ jobs:
 
           python3 build-system/Make/ImportCertificates.py --path build-system/fake-codesigning/certs
           python3 -u build-system/Make/Make.py \
+            --overrideXcodeVersion \
             --bazelUserRoot="$BAZEL_USER_ROOT" \
             build \
             --configurationPath="build-system/appstore-configuration.json" \
             --codesigningInformationPath=build-system/fake-codesigning \
             --configuration=release_arm64 \
-            --buildNumber="$BUILD_NUMBER" \
-            --overrideXcodeVersion
+            --buildNumber="$BUILD_NUMBER"
 
           OUTPUT_PATH="build/artifacts"
           rm -rf "$OUTPUT_PATH"
